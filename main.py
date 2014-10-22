@@ -16,35 +16,45 @@
 #
 import cgi
 import webapp2
-from urllib2 import Request, urlopen
+import GsFrcApiCommunicator as communicator
 import json
 
 MAIN_PAGE_HTML = """\
 <html>
-  <body>
-    <form action="/EventListing" method="post">
-      <div><textarea name="content" rows="3" cols="60"></textarea></div>
-      <div><input type="submit" value="Get CMP"></div>
-    </form>
-  </body>
+    <body>
+        <form action="/EventListing/Data" method="post">
+            <div><input type="submit" value="Get Event"></div>
+        </form>
+        <form action="/Rankings/Data" method="post">
+            <div><input type="submit" value="Get Rankings"></div>
+        </form>
+    </body>
 </html>
 """
+
 
 class MainPage(webapp2.RequestHandler):
     def get(self):
         self.response.write(MAIN_PAGE_HTML)
 
-class FRCEventListingRequest(webapp2.RequestHandler):
+
+class FrcEventListingRequestHandler(webapp2.RequestHandler):
     def post(self):
-        request = Request("http://private-anon-f696a1583-frceventsprelim.apiary-mock.com/2014/events?eventCode=CMP&districtCode=PNW&excludeDistrict=true")
-        Request.add_header(request, "Accept", "application/json")
-        Request.add_header(request, "Authorization", "Token communitysampletoken")
-        response_body = urlopen(request).read()
+        event_listing = communicator.get_event_listing(2014, "ILIL")
         self.response.write('<html><body>Response:<pre>')
-        self.response.write(cgi.escape(response_body))
+        self.response.write(event_listing.events_list[0].name)
         self.response.write('</pre></body></html>')
+
+
+class FrcRankingsRequestHandler(webapp2.RequestHandler):
+    def post(self):
+        rankings = communicator.get_rankings(2014, "ILIL")
+        rankings_json = [{'Rankings': rankings.to_string}]
+        self.response.write(json.dumps(rankings_json))
+
 
 app = webapp2.WSGIApplication([
     ('/', MainPage),
-    ('/EventListing', FRCEventListingRequest),
+    ('/EventListing/Data', FrcEventListingRequestHandler),
+    ('/Rankings/Data', FrcRankingsRequestHandler),
 ], debug=True)

@@ -1,24 +1,36 @@
 __author__ = 'Ty'
 
-import json
 import FrcApiSettings
+import FrcEvent
 
 
-class FRCEventListingRequest:
-    def __init__(self, season, eventCode):
+class FrcEventListingRequest:
+    def __init__(self, season, event_code):
         self.season = season
-        self.eventCode = eventCode
+        self.eventCode = event_code
 
-    def __init__(self, season):
-        self.season = season
-        self.eventCode = ""
-
-    def buildUri(self):
-        url = FRCEventListingRequest
-        url = url + self.season + "/events?"
+    def build_uri(self):
+        url = FrcApiSettings.frc_api_url
+        url = url + str(self.season) + "/events?"
         if self.eventCode != "":
-            url = url + "eventcode=" + self.eventCode.upper();
+            url = url + "eventcode=" + self.eventCode.upper()
         return url
+
+
+class FrcEventListingResponse:
+    def __init__(self, json_obj):
+        self.events_list = []
+        self.event_count = 0
+        self.deserialize(json_obj)
+
+    def deserialize(self, json_obj):
+        events_dict_list = json_obj.get('Events')
+
+        for item in events_dict_list:
+            self.events_list.append(FrcEvent.create_frc_event_from_json(item))
+
+        self.event_count = json_obj.get('eventCount')
+
 
 
 
