@@ -18,20 +18,23 @@ import cgi
 import webapp2
 import GsFrcApiCommunicator as communicator
 import json
+import logging
 
 MAIN_PAGE_HTML = """\
 <html>
     <body>
-        <form action="/EventListing/Data" method="post">
-            <div><input type="submit" value="Get Event"></div>
-        </form>
         <form action="/Rankings/Data" method="post">
+            <div><textarea name="event" rows="3" cols="60"></textarea></div>
             <div><input type="submit" value="Get Rankings"></div>
+        </form>
+        <form action="/NextMatch/Data" method="post">
+            <div><textarea name="event" rows="3" cols="60"></textarea></div>
+            <div><textarea name="match_num" rows="3" cols="60"></textarea></div>
+            <div><input type="submit" value="Next Match"></div>
         </form>
     </body>
 </html>
 """
-
 
 class MainPage(webapp2.RequestHandler):
     def get(self):
@@ -48,13 +51,25 @@ class FrcEventListingRequestHandler(webapp2.RequestHandler):
 
 class FrcRankingsRequestHandler(webapp2.RequestHandler):
     def post(self):
-        rankings = communicator.get_rankings(2014, "ILIL")
+        event = cgi.escape(self.request.get('event'))
+        rankings = communicator.get_rankings(2014, event)
         rankings_json = [{'Rankings': rankings.to_string}]
         self.response.write(json.dumps(rankings_json))
+
+
+class FrcNextMatchRequestHandler(webapp2.RedirectHandler):
+    def post(self):
+        event = cgi.escape(self.request.get('event'))
+        schedule_response = communicator.get_schedule(2014, event, "qual")
+        match_num = int(cgi.escape(self.request.get('match_num')))
+        for match in schedule_response.schedule:
+            if match.match_number == match_num:
+                self.response.write(match.to_json())
 
 
 app = webapp2.WSGIApplication([
     ('/', MainPage),
     ('/EventListing/Data', FrcEventListingRequestHandler),
     ('/Rankings/Data', FrcRankingsRequestHandler),
+    ('/NextMatch/Data', FrcNextMatchRequestHandler),
 ], debug=True)

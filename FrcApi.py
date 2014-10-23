@@ -3,6 +3,7 @@ __author__ = 'ttremblay'
 import FrcApiSettings
 import FrcEvent
 import FrcRanking
+import FrcScheduleMatch
 import logging
 
 
@@ -70,8 +71,27 @@ class FrcRankingsResponse:
         return output_string
 
 
-class FrcMatchResultRequest:
-    def __init__(self, season, event_code):
+class FrcScheduleRequest:
+    def __init__(self, season, event_code, tournament_level):
         self.season = season
         self.event_code = event_code
+        self.tournament_level = tournament_level
+
+    def build_uri(self):
+        url = FrcApiSettings.frc_api_url
+        url += "schedule/" + str(self.season) + "/" + self.event_code + "/" + self.tournament_level
+        return url
+
+
+class FrcScheduleResponse:
+    def __init__(self, json):
+        self.schedule = []
+        self.convert_to_object(json)
+
+    def convert_to_object(self, json):
+        json_schedule = json.get('Schedule')
+        for match in json_schedule:
+            self.schedule.append(FrcScheduleMatch.create_frc_schedule_match_from_json(match))
+
+        return self.schedule
 
