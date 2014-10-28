@@ -17,6 +17,7 @@
 import cgi
 import webapp2
 import GsFrcApiCommunicator as communicator
+import GsDatabaseSettings as database
 import json
 import logging
 
@@ -35,6 +36,7 @@ MAIN_PAGE_HTML = """\
     </body>
 </html>
 """
+
 
 class MainPage(webapp2.RequestHandler):
     def get(self):
@@ -55,6 +57,11 @@ class FrcRankingsRequestHandler(webapp2.RequestHandler):
         rankings = communicator.get_rankings(2014, event)
         rankings_json = [{'Rankings': rankings.to_string}]
         self.response.write(json.dumps(rankings_json))
+        database.rankings_id, database.rankings_rev = database.db[database.db_name].save({
+            "_id": database.rankings_id,
+            "_rev": database.rankings_rev,
+            "rankings": rankings.to_string
+        })
 
 
 class FrcNextMatchRequestHandler(webapp2.RedirectHandler):
@@ -65,6 +72,12 @@ class FrcNextMatchRequestHandler(webapp2.RedirectHandler):
         for match in schedule_response.schedule:
             if match.match_number == match_num:
                 self.response.write(match.to_json())
+                database.next_match_id, database.next_match_rev = database.db[database.db_name].save({
+                    "_id": database.next_match_id,
+                    "_rev": database.next_match_rev,
+                    "next_match": match.to_json(),
+                })
+
 
 
 app = webapp2.WSGIApplication([
